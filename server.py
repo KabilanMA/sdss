@@ -1,13 +1,22 @@
 import socket
 import threading
+import json
+
+from internal.filestorage import chunk
 
 def handle_client(client_socket):
      # Receive data from client
-    data = client_socket.recv(1024).decode()
-    print("Received from client:", data)
+    data = client_socket.recv(2048).decode()
+    # print("Received from client:", data)
 
+    decoded_data = json.loads(data)
+    kind = decoded_data['kind']
+    if (kind == "upload"):
+        file_name = str(decoded_data['file_id']) + "_" + str(decoded_data['chunk_id']) + "_" + str(decoded_data['root_hash']) + ".json"
+        with open(file_name, "wb") as file:
+            file.write(json.dumps(decoded_data).encode())
     # Send response back to client
-    response = "Hello from server"
+    response = "Success"
     client_socket.send(response.encode())
 
     # Close the connection
@@ -34,4 +43,6 @@ def server():
         client_handler = threading.Thread(target=handle_client, args=(client_socket,))
         client_handler.start()
 
-server()
+# Start the server
+server_thread = threading.Thread(target=server)
+server_thread.start()

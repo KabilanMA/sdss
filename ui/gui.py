@@ -1,8 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog
 
-from internal.network import connection
-import client
+from client import upload
 
 class FileStorageApp:
     def __init__(self, root):
@@ -22,7 +21,7 @@ class FileStorageApp:
     def upload_file(self):
         file_path = filedialog.askopenfilename()
         if file_path:
-            client.upload(file_path)
+            upload(file_path)
             tk.messagebox.showinfo("Success", "File uploaded successfully")
 
     def download_file(self):

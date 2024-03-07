@@ -11,10 +11,24 @@ class MerkleTree:
         leaves = [self._calculate_hash(chunk) for chunk in chunks]
         tree = leaves[:]
         while len(tree) > 1:
-            tree = [self._calculate_hash(tree[i].encode() + tree[i + 1].encode()) for i in range(0, len(tree), 2)]
+            if (len(tree) % 2 == 0): #even 
+                even = True
+            else:
+                even = False
+            temp_tree = []
+            for i in range(0, len(tree), 2):
+                if (not even):
+                    if i >= len(tree)-1:
+                        temp_tree.append(tree[i].encode() + tree[i].encode())
+                else:
+                    temp_tree.append(tree[i].encode() + tree[i+1].encode())
+
+            tree = temp_tree[:]
         root_hash = tree[0]
         del leaves, tree
-        return root_hash
+        if isinstance(root_hash, str):
+            return root_hash
+        return root_hash.decode()
 
     # def split_file(self, file_path):
     #     chunks = self._chunk_file(file_path)
