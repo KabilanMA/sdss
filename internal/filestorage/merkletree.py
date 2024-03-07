@@ -7,16 +7,6 @@ class MerkleTree:
     def _calculate_hash(self, data):
         return hashlib.sha256(data).hexdigest()
 
-    # def _chunk_file(self, file_path):
-    #     chunks = []
-    #     with open(file_path, 'rb') as file:
-    #         while True:
-    #             data = file.read(self.chunk_size)
-    #             if not data:
-    #                 break
-    #             chunks.append(data)
-    #     return chunks
-
     def _build_tree(self, chunks):
         leaves = [self._calculate_hash(chunk) for chunk in chunks]
         tree = leaves[:]

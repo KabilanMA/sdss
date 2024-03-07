@@ -1,14 +1,41 @@
 import socket
 import threading
+import os
+import json
+from database import Database
 
-def handle_client(client_socket):
+database = Database()
+
+def create_directory(dir_path="./data"):
+    if not (os.path.exists(dir_path)):
+        os.makedirs(dir_path)
+        print(f"Directory '{dir_path}' created successfully")
+
+def create_file(file_path="./data/test.json", data=""):
+    if not os.path.exists(file_path):
+        with open(file_path, 'w') as file:
+            json.dump(data, file, indent=4)
+        print(f"JSON file '{file_path}' created successfully")
+
+def handle_client(client_socket, client_address):
     # Receive data from client
-    data = client_socket.recv(1024).decode()
+    client_ip = client_address[0]
+    full_data: str = client_socket.recv(1024).decode()
+    global database
+    temp = [a.strip() for a in full_data.split("?")]
+    if (len(temp)!=2):
+        response = "Invalid Input Format"
+    kind = temp[0]
+    data = temp[1]
+
+    if (kind=="upload"):
+        file_name, root_hash = data.split("|")
+        db_data = database.upload_file(file_name, root_hash)
+
     print("Received from client:", data)
 
     # Send response back to client
-    response = "Hello from server"
-    client_socket.send(response.encode())
+    client_socket.send(str(db_data[0]).encode())
 
     # Close the connection
     client_socket.close()
@@ -23,6 +50,8 @@ def server():
     server_socket.bind((host, port))
     server_socket.listen(5)
 
+    create_directory()
+
     print(f"Tracker is listening on {host}:{port}")
 
     while True:
@@ -31,7 +60,7 @@ def server():
         print(f"Connected to {client_address}")
 
         # Handle client request in a new thread
-        client_handler = threading.Thread(target=handle_client, args=(client_socket,))
+        client_handler = threading.Thread(target=handle_client, args=(client_socket, client_address,))
         client_handler.start()
 
 # Start the server
