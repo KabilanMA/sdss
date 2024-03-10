@@ -3,4 +3,7 @@ test.py
 
 __pycache__
 
-**.db
+*.db
+*.mp4
+
+/data/

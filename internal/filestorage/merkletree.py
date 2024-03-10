@@ -19,9 +19,9 @@ class MerkleTree:
             for i in range(0, len(tree), 2):
                 if (not even):
                     if i >= len(tree)-1:
-                        temp_tree.append(tree[i].encode() + tree[i].encode())
+                        temp_tree.append(self._calculate_hash(tree[i].encode() + tree[i].encode()))
                 else:
-                    temp_tree.append(tree[i].encode() + tree[i+1].encode())
+                    temp_tree.append(self._calculate_hash(tree[i].encode() + tree[i+1].encode()))
 
             tree = temp_tree[:]
         root_hash = tree[0]
