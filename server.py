@@ -2,52 +2,118 @@ import socket
 import threading
 import json
 from datetime import datetime
+import os
+import time
 
 from internal.filestorage import chunk
 from utils.file import create_folder_if_not_exists
 
 from config_info import *
 
-file_name_global = ""
+def get_chunks(file_id : str):
+    # Iterate through the files in the directory
+    chunks = []
+    chunk_ids = []
+    folder_path = "./data"
+    for filename in os.listdir(folder_path):
+        if filename.startswith(file_id+"_") and not (filename.endswith(".json")):
+            file_path = os.path.join(folder_path, filename)
+            json_file_path = file_path+".json"
+            data_dict = dict()
+            with open(json_file_path, "r") as json_file:
+                data_dict = json.load(json_file)
+            chunk_id = data_dict['chunk_id']
+            chunk_ids.append(chunk_id)
+            with open(file_path, "rb") as file:
+                byte_data = file.read()
+                chunks.append(byte_data)
+    
+    return chunks, chunk_ids
 
-def handle_client(client_socket, client_address):
+def handle_client(client_socket: socket.socket, client_address):
      # Receive data from client
     create_folder_if_not_exists('./data')
     global file_name_global
-    response = "Not completed"
-    data = client_socket.recv(chunk_size+1024)
-    try:
-        data = data.decode()
-        if file_name_global == "":
-            decoded_data = json.loads(data)
-            kind = decoded_data['kind']
-            if kind == "upload":
-                decoded_data['uploader'] = client_address
-                decoded_data['timestamp'] = str(datetime.now())
-                file_name = str(decoded_data['file_id']) + "_" + decoded_data['root_hash'] + ".part_" + str(decoded_data['chunk_id'])
-                decoded_data['file_name'] = file_name
-                file_name_ext = file_name + ".json"
-                # Convert bytes to JSON-serializable string
-                decoded_data_str = json.dumps(decoded_data)
-                with open("./data/"+file_name_ext, "w") as file:
-                    file.write(decoded_data_str)
-                    file_name_global = file_name
-            response = "Successfully saved metadata"
-        else:
-            response = "Retry in a while"
-    except UnicodeDecodeError:
-        chunk_file_name = file_name_global
-        with open("./data/"+chunk_file_name, 'wb') as chunk_file:
-            chunk_file.write(data)
+    data = json.loads(client_socket.recv(1024*16).decode())
+    if data['kind'] == "upload":
+        data['uploader'] = client_address
+        data['timestamp'] = str(datetime.now())
+        file_name = str(data['file_id']) + "_" + data['root_hash'] + ".part_" + str(data['chunk_id'])
+        data['file_name'] = file_name
+        file_name_ext = file_name + ".json"
+        with open("./data/"+file_name_ext, "w") as file:
+            file.write(json.dumps(data))
+        response = dict()
+        response['type'] = "upload"
+        response['type_section'] = "metadata"
+        response['success'] = True
+        response['file_name'] = file_name_ext
+        client_socket.sendall(json.dumps(response).encode())
+
+        received_data = b''
+        while True:
+            chunk = client_socket.recv(chunk_size)
+            if not chunk:
+                break
+            received_data += chunk
+        with open("./data/"+file_name, 'wb') as chunk_file:
+            chunk_file.write(received_data)
+
+    elif (data['kind'] == "download"):
+        file_id = data['file_id']
+        chunks, chunk_ids = get_chunks(str(file_id))
+        client_socket.sendall(str(len(chunks)).zfill(128).encode())
+        for i in range(len(chunks)):
+            client_socket.sendall(str(chunk_ids[i]).zfill(128).encode())
+            print("sending chunks")
+            client_socket.sendall(chunks[i])
+            time.sleep(1)
+            print(len(chunks[i]))
+
+    client_socket.close()
         
-        file_name_global = ""
-        response = "Successfully saved chunks"
+
+    # try:
+    #     data = data.decode()
+    #     if file_name_global == "":
+    #         decoded_data = json.loads(data)
+    #         kind = decoded_data['kind']
+    #         if kind == "upload":
+    #             decoded_data['uploader'] = client_address
+    #             decoded_data['timestamp'] = str(datetime.now())
+    #             file_name = str(decoded_data['file_id']) + "_" + decoded_data['root_hash'] + ".part_" + str(decoded_data['chunk_id'])
+    #             decoded_data['file_name'] = file_name
+    #             file_name_ext = file_name + ".json"
+
+    #             with open("./data/"+file_name_ext, "w") as file:
+    #                 file.write(json.dumps(decoded_data))
+    #                 file_name_global = file_name
+    #             response = "Successfully saved metadata"
+    #         elif kind == "download":
+    #             file_id = decoded_data['file_id']
+    #             chunks, chunk_ids = get_chunks(str(file_id))
+    #             client_socket.send(str(len(chunks)).zfill(1024).encode())
+    #             for i in range(len(chunks)):
+    #                 client_socket.send(str(chunk_ids[i]).zfill(1024).encode())
+    #                 print(len(chunks[i]), chunk_ids[i])
+    #                 client_socket.send(chunks[i])
+    #             response = "Chunks sent"
+    #     else:
+    #         response = "Retry in a while"
+    # except UnicodeDecodeError:
+    #     chunk_file_name = file_name_global
+    #     with open("./data/"+chunk_file_name, 'wb') as chunk_file:
+    #         chunk_file.write(data)
+        
+    #     file_name_global = ""
+    #     response = "Successfully saved chunks"
     
-    finally:
-        print(response)
-        client_socket.send(response.encode())
-        # Close the connection
-        client_socket.close()
+    # finally:
+    #     print(response)
+    #     if (response != "Chunks sent"):
+    #         client_socket.send(response.encode())
+    #         # Close the connection
+    #         client_socket.close()
 
 def server():
     # Define host and port for the server

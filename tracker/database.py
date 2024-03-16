@@ -1,12 +1,12 @@
 import sqlite3
 
 class Database:
-    def __init__(self, database_name="tracker.db"):
-        self.database_name = "tracker.db"
+    def __init__(self, database_name="./tracker/data/tracker.db"):
+        self.database_name = database_name
         self.connection = None
         self.cursor = None
         self.execute('''CREATE TABLE IF NOT EXISTS file (id INTEGER PRIMARY KEY AUTOINCREMENT, file_name TEXT, file_size INTEGER, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, root_hash TEXT, chunk_count INTEGER)''')
-        self.execute('''CREATE TABLE IF NOT EXISTS peer_file (id INTEGER PRIMARY KEY AUTOINCREMENT, file_id INTEGER, peer_ip TEXT, peer_port INTEGER)''')
+        self.execute('''CREATE TABLE IF NOT EXISTS peer_file (id INTEGER PRIMARY KEY AUTOINCREMENT, file_id INTEGER, peer_ip TEXT, peer_port INTEGER, UNIQUE(file_id, peer_ip))''')
         
 
     def connect(self):
@@ -74,7 +74,7 @@ class Database:
         return row
     
     def update_file_peer(self, file_id, ip, port):
-        query = 'INSERT INTO peer_file (file_id, peer_ip, peer_port) VALUES ("' + file_id + '", "' + ip + '", "' + port + '")'
+        query = 'INSERT OR REPLACE INTO peer_file (file_id, peer_ip, peer_port) VALUES ("' + file_id + '", "' + ip + '", "' + port + '")'
         
         if (self.connection == None):
             self.connect()
@@ -125,7 +125,7 @@ class Database:
         return rows
     
     def get_file_info(self, file_name):
-        query = 'SELECT id, file_name, root_hash FROM file WHERE file_name="' + file_name + '"'
+        query = 'SELECT id, file_name, root_hash, chunk_count FROM file WHERE file_name="' + file_name + '"'
 
         if (self.connection == None):
             self.connect()
@@ -135,7 +135,9 @@ class Database:
         self.cursor.execute(query)
         rows = self.cursor.fetchall()
         entry = rows[-1]
-        query = 'SELECT file_id, peer_ip, peer_port FROM peer_file WHERE file_id="' + entry[0] + '"'
+        chunk_count = entry[-1]
+        root_hash = entry[-2]
+        query = 'SELECT file_id, peer_ip, peer_port FROM peer_file WHERE file_id="' + str(entry[0]) + '"'
         self.cursor.execute(query)
         rows = self.cursor.fetchall()
 
@@ -144,36 +146,4 @@ class Database:
         self.cursor = None
         self.connection = None
 
-        return rows
-
-# def connect(database_name="tracker.db"):
-#     conn = sqlite3.connect
-# # Connect to SQLite database (create it if it doesn't exist)
-# conn = sqlite3.connect('example.db')
-
-# # Create a cursor object to execute SQL commands
-# cursor = conn.cursor()
-
-# # Create a table
-# cursor.execute('''CREATE TABLE IF NOT EXISTS users
-#                   (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)''')
-
-# # Insert data into the table
-# cursor.execute("INSERT INTO users (name, age) VALUES (?, ?)", ('Alice', 30))
-# cursor.execute("INSERT INTO users (name, age) VALUES (?, ?)", ('Bob', 25))
-# cursor.execute("INSERT INTO users (name, age) VALUES (?, ?)", ('Charlie', 35))
-
-# # Commit changes to the database
-# conn.commit()
-
-# # Query data from the table
-# cursor.execute("SELECT * FROM users")
-# rows = cursor.fetchall()
-
-# # Print query results
-# for row in rows:
-#     print(row)
-
-# # Close the cursor and connection
-# cursor.close()
-# conn.close()
+        return rows, root_hash, chunk_count

@@ -55,8 +55,10 @@ class FileStorageApp:
             download_button.grid(row=i, column=3)
 
     def _download_file(self, file_name):
-        download_file(file_name)
-        messagebox.showinfo("Info", "Download Completed")
+        if(download_file(file_name)):
+            messagebox.showinfo("Info", "Download Completed")
+        else:
+            messagebox.showinfo("Info", "One or more of the data chunks failed a consistency check. The data may be corrupt.")
 
 if __name__ == "__main__":
     root = tk.Tk()
