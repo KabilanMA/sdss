@@ -30,6 +30,7 @@ def fetch_file_names():
 
 def distribute_2_peers(file_id, chunks: list[bytes], root_hash: str):
     peers_set = set()
+    peers_port = set()
     output = []
     for i, chunk in enumerate(chunks):
         peer_to_choose = random.randint(0, len(peers)-1)
@@ -37,8 +38,9 @@ def distribute_2_peers(file_id, chunks: list[bytes], root_hash: str):
         peer_ip = peer['ip']
         peer_port = peer['port']
         
-        if(not(peer_ip in peers_set)):
+        if((not(peer_ip in peers_set)) or (not(peer_port in peers_port))):
             peers_set.add(peer_ip)
+            peers_port.add(peer_port)
             output.append([peer_ip, peer_port])
             add_peer = True
         else:

@@ -1,6 +1,10 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from client import upload, fetch_file_names, download_file
 from utils.file import extract_data_type
 

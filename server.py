@@ -4,17 +4,18 @@ import json
 from datetime import datetime
 import os
 import time
+import argparse
 
 from internal.filestorage import chunk
 from utils.file import create_folder_if_not_exists
 
 from config_info import *
 
-def get_chunks(file_id : str):
+def get_chunks(file_id : str, data_directory : str):
     # Iterate through the files in the directory
     chunks = []
     chunk_ids = []
-    folder_path = "./data"
+    folder_path = data_directory
     for filename in os.listdir(folder_path):
         if filename.startswith(file_id+"_") and not (filename.endswith(".json")):
             file_path = os.path.join(folder_path, filename)
@@ -30,9 +31,9 @@ def get_chunks(file_id : str):
     
     return chunks, chunk_ids
 
-def handle_client(client_socket: socket.socket, client_address):
+def handle_client(client_socket: socket.socket, client_address, data_directory):
      # Receive data from client
-    create_folder_if_not_exists('./data')
+    create_folder_if_not_exists(data_directory)
     global file_name_global
     data = json.loads(client_socket.recv(1024*16).decode())
     if data['kind'] == "upload":
@@ -41,7 +42,7 @@ def handle_client(client_socket: socket.socket, client_address):
         file_name = str(data['file_id']) + "_" + data['root_hash'] + ".part_" + str(data['chunk_id'])
         data['file_name'] = file_name
         file_name_ext = file_name + ".json"
-        with open("./data/"+file_name_ext, "w") as file:
+        with open(data_directory+"/"+file_name_ext, "w") as file:
             file.write(json.dumps(data))
         response = dict()
         response['type'] = "upload"
@@ -56,12 +57,12 @@ def handle_client(client_socket: socket.socket, client_address):
             if not chunk:
                 break
             received_data += chunk
-        with open("./data/"+file_name, 'wb') as chunk_file:
+        with open(data_directory+"/"+file_name, 'wb') as chunk_file:
             chunk_file.write(received_data)
 
     elif (data['kind'] == "download"):
         file_id = data['file_id']
-        chunks, chunk_ids = get_chunks(str(file_id))
+        chunks, chunk_ids = get_chunks(str(file_id), data_directory)
         client_socket.sendall(str(len(chunks)).zfill(128).encode())
         for i in range(len(chunks)):
             client_socket.sendall(str(chunk_ids[i]).zfill(128).encode())
@@ -115,7 +116,7 @@ def handle_client(client_socket: socket.socket, client_address):
     #         # Close the connection
     #         client_socket.close()
 
-def server():
+def server(data_directory):
     # Define host and port for the server
     host = '0.0.0.0'  # Listen on all available interfaces
     port = 12345      # port number
@@ -133,9 +134,15 @@ def server():
         print(f"Connected to {client_address}")
 
         # Handle client request in a new thread
-        client_handler = threading.Thread(target=handle_client, args=(client_socket, client_address))
+        client_handler = threading.Thread(target=handle_client, args=(client_socket, client_address, data_directory))
         client_handler.start()
 
+parser = argparse.ArgumentParser(description="Argument parser to parse commandline argument for mount location")
+parser.add_argument('data_directory', type=str, help="Location of the data directory");
+
+args_ = parser.parse_args()
+
+
 # Start the server
-server_thread = threading.Thread(target=server)
+server_thread = threading.Thread(target=server, args=[args_.data_directory])
 server_thread.start()
