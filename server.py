@@ -72,49 +72,6 @@ def handle_client(client_socket: socket.socket, client_address, data_directory):
             print(len(chunks[i]))
 
     client_socket.close()
-        
-
-    # try:
-    #     data = data.decode()
-    #     if file_name_global == "":
-    #         decoded_data = json.loads(data)
-    #         kind = decoded_data['kind']
-    #         if kind == "upload":
-    #             decoded_data['uploader'] = client_address
-    #             decoded_data['timestamp'] = str(datetime.now())
-    #             file_name = str(decoded_data['file_id']) + "_" + decoded_data['root_hash'] + ".part_" + str(decoded_data['chunk_id'])
-    #             decoded_data['file_name'] = file_name
-    #             file_name_ext = file_name + ".json"
-
-    #             with open("./data/"+file_name_ext, "w") as file:
-    #                 file.write(json.dumps(decoded_data))
-    #                 file_name_global = file_name
-    #             response = "Successfully saved metadata"
-    #         elif kind == "download":
-    #             file_id = decoded_data['file_id']
-    #             chunks, chunk_ids = get_chunks(str(file_id))
-    #             client_socket.send(str(len(chunks)).zfill(1024).encode())
-    #             for i in range(len(chunks)):
-    #                 client_socket.send(str(chunk_ids[i]).zfill(1024).encode())
-    #                 print(len(chunks[i]), chunk_ids[i])
-    #                 client_socket.send(chunks[i])
-    #             response = "Chunks sent"
-    #     else:
-    #         response = "Retry in a while"
-    # except UnicodeDecodeError:
-    #     chunk_file_name = file_name_global
-    #     with open("./data/"+chunk_file_name, 'wb') as chunk_file:
-    #         chunk_file.write(data)
-        
-    #     file_name_global = ""
-    #     response = "Successfully saved chunks"
-    
-    # finally:
-    #     print(response)
-    #     if (response != "Chunks sent"):
-    #         client_socket.send(response.encode())
-    #         # Close the connection
-    #         client_socket.close()
 
 def server(data_directory):
     # Define host and port for the server
@@ -138,7 +95,7 @@ def server(data_directory):
         client_handler.start()
 
 parser = argparse.ArgumentParser(description="Argument parser to parse commandline argument for mount location")
-parser.add_argument('data_directory', type=str, help="Location of the data directory");
+parser.add_argument('data_directory', type=str, help="Location of the data directory")
 
 args_ = parser.parse_args()
 

@@ -66,7 +66,7 @@ def server():
         # Accept incoming connection
         client_socket, client_address = server_socket.accept()
         print(f"Connected to {client_address}")
-        create_folder_if_not_exists("./data")
+        create_folder_if_not_exists("./tracker/data")
 
         # Handle client request in a new thread
         client_handler = threading.Thread(target=handle_client, args=(client_socket, client_address,))

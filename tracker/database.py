@@ -6,7 +6,7 @@ class Database:
         self.connection = None
         self.cursor = None
         self.execute('''CREATE TABLE IF NOT EXISTS file (id INTEGER PRIMARY KEY AUTOINCREMENT, file_name TEXT, file_size INTEGER, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, root_hash TEXT, chunk_count INTEGER)''')
-        self.execute('''CREATE TABLE IF NOT EXISTS peer_file (id INTEGER PRIMARY KEY AUTOINCREMENT, file_id INTEGER, peer_ip TEXT, peer_port INTEGER, UNIQUE(file_id, peer_ip))''')
+        self.execute('''CREATE TABLE IF NOT EXISTS peer_file (id INTEGER PRIMARY KEY AUTOINCREMENT, file_id INTEGER, peer_ip TEXT, peer_port INTEGER, UNIQUE(file_id, peer_ip, peer_port))''')
         
 
     def connect(self):
