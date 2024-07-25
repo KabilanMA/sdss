@@ -1,29 +1,38 @@
-Considering uploading a file:
+# IntegrityVault - A Secure Distributed Storage System
 
-    1. Chunks for the file is created and the root hash will also be created.
-    2. Send request to the tracker server with file name and the root hash value.
-        Data format: <<<kind>>>?file_name|root_hash
-    3. Tracker saves both of the information.
-    4. Uploader gets a success message from the tracker.
-    5. Uploader again sends request to the tracker to get the list of the peers in the network.
-    6. Uploader gets the list of peers in the network.
-    7. Sends the chunks also the meta information about the chunk.
-    8. Peers in the network receive the chunks and store the chunks and also the meta data along with it.
+IntegrityVault is a secure distributed storage system that distributes file partitions as chunks across a distributed network. While ensuring data integrity, this system operates without incorporating fault tolerance mechanisms. IntegrityVault satisfies three basic requirements: it ensures the random distribution of file chunks among cluster nodes for security, allowing users to seamlessly retrieve and reconstruct the entire file at any time; it guarantees data integrity and validation by enabling verification of file chunks to confirm they have not been tampered with, using techniques such as a Merkle Tree; and it provides a user-friendly interface that allows users to list and search for stored files, view file metadata (including file name, size, date of storage, type, etc.), verify file integrity, download files, and upload new files to the distributed storage system.
 
-Start tracker server:
-`docker run -it --rm -v "/home/kabilan/Desktop/Semester8/CS4262 - Distributed Systems/Project/Implementation/tracker":/app -p 8080:12345 tracker /bin/bash`
-`python3 server.py`
+A Merkle tree, is a data structure used in cryptography and computer science to ensure data integrity and efficiency. It is a binary tree in which every leaf node contains a hash of a data block, and each non-leaf node contains a hash of its child nodes. This hierarchical arrangement allows for quick and efficient verification of data integrity.
 
-Start peer server:
-`docker run -it --rm -v "/home/kabilan/Desktop/Semester8/CS4262 - Distributed Systems/Project/Implementation":/app -p 8081:12345 tracker /bin/bash`
-`python3 server.py`
+## How to run the application
 
-`docker run -it --rm -v "/home/kabilan/Desktop/Semester8/CS4262 - Distributed Systems/Project/Implementation":/app -p 8082:12345 tracker /bin/bash`
-`python3 server.py`
+1. Setup the enviroment with docker containers.
 
-`docker run -it --rm -v "/home/kabilan/Desktop/Semester8/CS4262 - Distributed Systems/Project/Implementation":/app -p 8083:12345 tracker /bin/bash`
-`python3 server.py`
+1.1 Use the following command to create docker image to run the containers.
 
-`docker run --rm -p 8080:12345 sdss python3 tracker/server.py`
-`docker run --rm -p 8081:12345 sdss python3 server.py`
-`docker build -t sdss:latest .`
+`docker build -t sdss .`
+
+1.2 Assume we need one tracker server and three worker storage nodes, therefore we need to create 4 containers.
+
+Use the following command in 4 terminals to start 4 continers to run with previously created docker image.
+
+`docker run -it --rm -v "/local/path/to/the/project/directory":/app -p 8080:12345 sdss /bin/bash`
+
+2. Run the servers
+
+Inside the container's interactive terminal, run the servers.
+
+For tracker server: `python3 tracker/server.py`
+
+For worker storage nodes: `python3 server.py ./data_x`
+(replace `x` with different numbers for each container to have differnt volume mount)
+
+Now all servers are running succesfully.
+
+3. Upload file
+
+Run the following command to open UI client to upload and download files.
+
+`python3 ui/gui.py`
+
+Now user should be able to upload and download anyfiles.
